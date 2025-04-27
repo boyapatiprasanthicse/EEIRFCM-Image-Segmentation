@@ -1,0 +1,194 @@
+clear all;
+close all;
+%img=imread('D:\softsets_new\softsets\images\brain\phantom\ori.jpg');
+im1=imread('C:\Users\hcl\Downloads\brainwed\inu20\t1_icbm_normal_1mm_pn3_rf20.png');
+% %img=imread('E:\anu\anupama\softsets\final code_12_06_2014\images\brain\phantom\gauss.jpg');
+% img=imread('D:\softsets_new\softsets\images\brain\phantom\saltn.jpg');
+img=im1(:,:,1);
+img=im2double(img);
+nc=4;
+%img=imresize(img,[1024,1024]);
+[m,n]=size(img);
+data = reshape( img, [m*n,1] );
+ndata =size(data,1);
+ndims = size(data,2);
+cluster_stats = zeros(nc,ndims);
+last_clusters= zeros(nc,ndims);
+% random_labels = floor(rand(ndata,1) * nc) + 1;
+% data_clusters = random_labels;
+distances = zeros(ndata,nc);
+up_apx=zeros(ndata,nc);
+lw_apx=zeros(ndata,nc);
+iterations=0;
+% low=min(min(img));
+% high=max(max(img));
+% mm=high-low;
+% m1=ceil(mm/4);
+% m2=ceil(mm/2);
+% for i=1:m
+%     for j=1:n
+%           if (img(i,j)>low & img(i,j)<=(low+m1))
+%             b(i,j)=img(i,j);
+%           elseif(img(i,j)>(low+m1) & img(i,j)<=(low+m2))
+%              c(i,j)=img(i,j);   
+%           elseif(img(i,j)>(low+m2) & img(i,j)<=high)
+%              d(i,j)=img(i,j);       
+%           end
+%    end
+% end
+
+peaks=hist_peak(img);
+cluster_stats(1)=peaks(1);
+cluster_stats(2)=peaks(2);
+cluster_stats(3)=0.5;
+cluster_stats(4)=0.8;
+% cluster_stats(5)=0.3;
+
+cluster_stats(6)=0.2;
+
+for c=1:nc
+    
+    
+        distance_vectors = data - ones(ndata,1) * cluster_stats(c,ndims);
+        distances(:,c) = sqrt(sum(distance_vectors.^2,2));
+
+end
+    
+    [minn,min_ind] = min(distances');
+    data_clusters = min_ind';
+tic;
+%initial centers
+while(1)
+    
+    
+    
+ %save previous distances
+    last_clusters = cluster_stats;   
+    % For each cluster    
+    for c=1:nc
+        
+        % Find all data points assigned to this cluster
+        [ind] = find(data_clusters == c);
+        num_assigned = size(ind,1);
+        
+        % Add heuristic here
+        if( num_assigned < 1 )
+            disp('No points were assigned to this cluster');
+            
+            % Calculate the maximum distances from each cluster
+            max_distances = max(distances);
+            
+            [maxx,cluster_num] = max(max_distances);
+            [maxx,data_point] = max(distances(:,cluster_num));
+            
+            data_clusters(data_point) = cluster_num;
+            
+            ind = data_point;
+            num_assigned = 1;
+        end    
+        
+        % Save number of points per cluster plus average
+        cluster_stats(c,1) = num_assigned;
+        if( num_assigned > 1)
+            summ = sum(data(ind,:));
+            cluster_stats(c,ndims) = summ / num_assigned;
+        else
+            cluster_stats(c,ndims) = data(ind,:);
+        end
+        
+    end
+    
+   
+    %CALCULATE nearest DISTANCES cluster center  
+    for c=1:nc
+        distance_vectors = data - ones(ndata,1) * cluster_stats(c,ndims);
+        distances(:,c) = sqrt(sum(distance_vectors.^2,2));
+
+    end
+    
+    [minn,min_ind] = min(distances');
+    data_clusters = min_ind';
+    
+    p=distances'/minn;
+    [v,ind]=min(p');
+    %checking for threshol
+    t=zeros(m*n,nc);
+    tu=zeros(m*n,nc);
+%     for c=1:nc
+%             if((distances(:,c)'/minn)<=2 && c~=ind)
+%                 t(c)=c;
+%             end
+%     end
+     for c=1:nc
+            t(:,c)=distances(:,c)'./minn;         %divided other cluster membership with the max cluster
+            for i=1:m*n
+                if t(i,c)<=2 & c~=ind
+                    tu(i,c)=c;
+                end
+            end
+            %t indicates that other clusters are close to the member cluster
+    end
+    
+    %setting the upper and lower approximations.
+   for c=1:nc
+                if (sum(tu(:,c))~=0)
+                   up_apx(:,c)=distances(:,c);
+                   up_apx(:,ind)=distances(:,ind);
+               else
+                   up_apx(:,c)=distances(:,c);
+                   lw_apx(:,c)=distances(:,c);
+               end
+    end
+    
+    
+    %modify centroid calculation
+    boundry=up_apx-lw_apx;
+    wl=0.6;
+    wu=0.4; %wl+wu should be one
+
+     %objective function
+      for c=1:nc
+        if sum(lw_apx(:,c))~=0 & sum(boundry(:,c))==0
+           cluster_stats(c,ndims)=sum(((lw_apx(:,c))'./sum(any(lw_apx(:,c)~=0))));
+        elseif sum(lw_apx(:,c))==0 & sum(boundry(:,c))~=0
+             cluster_stats(c,ndims)=sum((boundry(:,c)')./(sum(any(boundry(:,c))~=0)));
+        else
+             cluster_stats(c,ndims)=sum(wl.*((lw_apx(:,c)'./sum(any(lw_apx)~=0)) + (wu.*boundry(:,c)'./sum(any(boundry(:,c))~=0))));
+        end
+      end
+      
+     
+    % Exit criteria
+    diff = sum(abs(cluster_stats(:) - last_clusters(:)));
+    diff
+    if( diff <= 1.5 )
+        break;
+    end
+    % Display clusters
+       iterations=iterations+1;
+   iterations
+end
+toc
+  % Just take size information and then make 
+% a new display image.
+% Reshape cluster information into image
+cluster_img = reshape( data_clusters, [m n] );
+figure,imshow(cluster_img,[]);
+
+segmented_images = cell(1,3);
+%rgb_label = repmat(cluster_img,[1 1 3]);
+
+for k = 1:nc
+    color = img;
+    color(cluster_img ~= k) = 0;
+    segmented_images{k} = color;
+    path=strcat('result\' , num2str(k) , '.png');
+    
+    imwrite(segmented_images{k},path);
+end
+figure,imshow(segmented_images{1}), title('objects in cluster 1');
+figure,imshow(segmented_images{2}), title('objects in cluster 2');
+figure,imshow(segmented_images{3}), title('objects in cluster 3');
+nc=3;
+rem_bck(nc);
+

@@ -1,0 +1,118 @@
+close all;
+clear all;
+%img=imread('D:\softsets_new\softsets\brats\3.png');
+img=imread('C:\Users\hcl\Downloads\brainwed\inu20\t1_icbm_normal_1mm_pn7_rf20.png');
+%%img=[2,3,4,5,6,7,8,9,10,11];
+%img=imread('E:\anu\anupama\softsets\final code_12_06_2014\images\brain\phantom\gauss.jpg');
+
+imshow(img);
+[m n]=size(img);
+nc=3;
+u=zeros(m*n,nc);
+data_clusters=size(m*n);
+
+% low=min(min(img));
+% high=max(max(img));
+% mm=high-low;
+% m1=ceil(mm/4);
+% m2=ceil(mm/2);
+% 
+% for i=1:m
+%     for j=1:n
+%           if (img(i,j)>low & img(i,j)<=(low+m1))
+%             b(i,j)=img(i,j);
+%           elseif(img(i,j)>(low+m1) & img(i,j)<=(low+m2))
+%              c(i,j)=img(i,j);   
+%           elseif(img(i,j)>(low+m2) & img(i,j)<=high)
+%              d(i,j)=img(i,j);       
+%           end
+%    end
+% end
+% V(1,1)=round(mean(mean(b)));
+% V(1,2)=round(mean(mean(c)));
+% V(1,3)=round(mean(mean(d)));
+% V(1,4)=round(mean(mean(d)));
+% % V=[0.5030,1.8153,0.2827];
+% %  V(1,1)=3;
+% %  V(1,2)=5;
+% %  V(1,3)=11;
+% % image=img;
+
+
+peaks=hist_peak(img);
+V(1)=peaks(1);
+V(2)=peaks(2);
+V(3)=peaks(3);
+V(4)=peaks(4);
+
+image=reshape(img,[m*n,1]);
+image=im2double(image);
+last_u=u;
+
+p=0;
+tic
+while(1)
+     for j=1:nc
+            s=0;
+           for k=1:nc
+               if image(:,1)==V(j)& image(:,1)==V(k)
+                   s=1;
+               else
+               s=s+((abs(image(:,1)-V(j)))./abs(image(:,1)-V(k))).^2;
+               end
+           end
+           u(:,j)=1./s;
+      end
+
+
+    nu=zeros(1,nc);
+    de=zeros(1,nc);
+    for j=1:nc
+        for i=1:(m*n)
+               nu(j)=nu(j)+(u(i,j).^2*image(i));
+               de(j)=de(j)+u(i,j).^2;
+        end
+        V(j)=(nu(j)/de(j));
+    end
+    p=p+1;
+    diff = sum(abs(last_u(:) - u(:)));
+    disp('the difference:');
+    disp(diff);
+    if( diff < 0.1 )
+        disp(diff);
+        break;
+    end
+    last_u=u;
+end
+toc
+[maxx,max_ind] = max(u');
+data_clusters = max_ind';
+    
+
+disp(p);
+
+  
+cluster_img = reshape( data_clusters, [m n] );
+
+segmented_images = cell(1,3);
+%rgb_label = repmat(cluster_img,[1 1 3]);
+
+for k = 1:nc
+    color = img;
+    color(cluster_img ~= k) = 0;
+    segmented_images{k} = color;
+   path=strcat('result\' , num2str(k) , '.png');
+    imwrite(segmented_images{k},path);
+end
+figure,imshow(segmented_images{1}), title('objects in cluster 1');
+figure,imshow(segmented_images{2}), title('objects in cluster 2');
+figure,imshow(segmented_images{3}), title('objects in cluster 3');
+nc=4;
+rem_bck(nc);
+
+
+
+
+
+
+
