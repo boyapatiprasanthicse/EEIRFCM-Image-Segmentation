@@ -72,7 +72,6 @@ Unrestricted use, distribution, and reproduction are permitted, provided the ori
 ## 📧 Author Contact
 
 **Dr. Prasanthi Boyapati**  
-Assistant Professor, Department of IT, R.V.R & J.C College of Engineering, Guntur, Andhra Pradesh, India  
-✉️ Email: (Add your email if you wish)
-# EEIRFCM-Image-Segmentation
+Assistant Professor, Computer Scientist 
+✉️ Email: prasanthiboyapaticse@gmail.com
 # EEIRFCM-Image-Segmentation
