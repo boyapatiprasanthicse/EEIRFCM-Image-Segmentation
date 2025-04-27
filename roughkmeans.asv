@@ -2,7 +2,7 @@ clear all;
 close all;
 %img=imread('D:\softsets_new\softsets\images\brain\phantom\ori.jpg');
 im1=imread('C:\Users\hcl\Downloads\brainwed\inu20\t1_icbm_normal_1mm_pn3_rf20.png');
-% %img=imread('E:\anu\anupama\softsets\final code_12_06_2014\images\brain\phantom\gauss.jpg');
+% %img=imread('E:final code_12_06_2014\images\brain\phantom\gauss.jpg');
 % img=imread('D:\softsets_new\softsets\images\brain\phantom\saltn.jpg');
 img=im1(:,:,1);
 img=im2double(img);
